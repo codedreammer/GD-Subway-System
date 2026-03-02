@@ -34,9 +34,9 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-gray-100 to-gray-200">
-      <div className="w-full max-w-sm bg-white rounded-3xl shadow-xl overflow-hidden h-[100dvh] sm:h-[95vh] sm:max-h-[860px] flex flex-col">
-        <div className="relative bg-green-700 h-[42%] min-h-[300px] max-h-[430px] rounded-b-[56px] sm:rounded-b-[72px] flex flex-col justify-center items-center text-white px-4">
+    <div className="min-h-screen flex justify-center items-center bg-linear-to-br from-gray-100 to-gray-200">
+      <div className="w-full max-w-sm bg-white rounded-3xl shadow-xl overflow-hidden h-dvh sm:h-[95vh] sm:max-h-215 flex flex-col">
+        <div className="relative bg-green-700 h-[42%] min-h-75 max-h-107.5 rounded-b-[56px] sm:rounded-b-[72px] flex flex-col justify-center items-center text-white px-4">
           <img src="/gla-logo.png" alt="GLA Logo" className="w-36 sm:w-44 mb-6" />
           <h1
             className="text-center text-[32px] sm:text-[36px] leading-[140%] sm:leading-[150%] font-normal text-white"
@@ -95,7 +95,7 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              className="w-full h-[64px] sm:h-[71px] rounded-full bg-gradient-to-r from-green-800 to-green-600 text-white text-xl sm:text-2xl font-semibold shadow-md hover:opacity-90 transition mt-auto"
+              className="w-full h-16 sm:h-17.75 rounded-full bg-linear-to-r from-green-800 to-green-600 text-white text-xl sm:text-2xl font-semibold shadow-md hover:opacity-90 transition mt-auto"
             >
               Login
             </button>
