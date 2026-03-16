@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { signIn } from "@/services/authService"
+import { supabase } from "@/lib/supabaseClient"
 
 export default function LoginPage() {
   const [mode, setMode] = useState("roll") // roll or email
@@ -24,13 +25,35 @@ export default function LoginPage() {
       email = `${identifier}@gla.ac.in`
     }
 
-    const { error } = await signIn(email, password)
+    const { data: { user }, error } = await signIn(email, password)
 
     if (error) {
       return setError("Invalid credentials")
     }
 
-    router.push("/student")
+    const { data: dbUser, error: dbError } = await supabase
+      .from('users')
+      .select('role, is_first_login')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (!dbUser) {
+      setError("User not provisioned by admin")
+      return
+    }
+
+    if (dbUser.is_first_login) {
+      router.push('/reset-password')
+      return
+    }
+
+    if (dbUser.role === 'vendor') {
+      router.push('/vendor')
+    } else if (dbUser.role === 'admin') {
+      router.push('/admin')
+    } else {
+      router.push('/student')
+    }
   }
 
   return (
