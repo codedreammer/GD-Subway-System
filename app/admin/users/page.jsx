@@ -22,6 +22,14 @@ export default async function UsersPage() {
     .eq("role", "student")
     .eq("is_active", false)
 
+  const today = new Date().toISOString().split("T")[0]
+
+  const { count: activeToday } = await supabase
+    .from("users")
+    .select("*", { count: "exact", head: true })
+    .eq("role", "student")
+    .gte("last_login_at", today)
+
   return (
     <div className="p-8 space-y-8">
       <div>
@@ -31,6 +39,7 @@ export default async function UsersPage() {
 
       <UserDashboard
         totalStudents={totalStudents}
+        activeToday={activeToday}
         firstLoginPending={firstLoginPending}
         suspended={suspended}
       />

@@ -6,7 +6,6 @@ import { signIn } from "@/services/authService"
 import { supabase } from "@/lib/supabaseClient"
 
 export default function LoginPage() {
-  const [mode, setMode] = useState("roll") // roll or email
   const [identifier, setIdentifier] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
@@ -16,43 +15,67 @@ export default function LoginPage() {
     e.preventDefault()
     setError("")
 
-    let email = identifier
+    const cleanInput = identifier.trim()
+    const isEmail = cleanInput.includes("@")
+    const isRoll = /^\d{10}$/.test(cleanInput)
 
-    if (mode === "roll") {
-      if (!/^\d{10}$/.test(identifier)) {
-        return setError("Enter valid 10-digit roll number")
-      }
-      email = `${identifier}@gla.ac.in`
+    if (!isEmail && !isRoll) {
+      setError("Enter valid email or 10-digit roll number")
+      return
     }
 
-    const { data: { user }, error } = await signIn(email, password)
+    let email = cleanInput.toLowerCase()
 
-    if (error) {
-      return setError("Invalid credentials")
+    if (isRoll) {
+      const { data: student, error: studentError } = await supabase
+        .from("users")
+        .select("email")
+        .eq("roll_no", cleanInput)
+        .single()
+
+      if (studentError || !student) {
+        setError("Student not found")
+        return
+      }
+      email = student.email
+    }
+
+    const { data: { user }, error: signInError } = await signIn(email, password)
+
+    if (signInError || !user) {
+      setError("Invalid credentials")
+      return
     }
 
     const { data: dbUser, error: dbError } = await supabase
-      .from('users')
-      .select('role, is_first_login')
-      .eq('id', user.id)
-      .maybeSingle()
+      .from("users")
+      .select("role, is_first_login")
+      .eq("id", user.id)
+      .single()
 
-    if (!dbUser) {
+    if (dbError || !dbUser) {
       setError("User not provisioned by admin")
       return
     }
 
+    await supabase
+      .from("users")
+      .update({
+        last_login_at: new Date().toISOString()
+      })
+      .eq("id", user.id)
+
     if (dbUser.is_first_login) {
-      router.push('/reset-password')
+      router.push("/reset-password")
       return
     }
 
-    if (dbUser.role === 'vendor') {
-      router.push('/vendor')
-    } else if (dbUser.role === 'admin') {
-      router.push('/admin')
-    } else {
-      router.push('/student')
+    if (dbUser.role === "admin") router.push("/admin")
+    else if (dbUser.role === "vendor") router.push("/vendor")
+    else if (dbUser.role === "student") router.push("/student")
+    else {
+      setError("Invalid user role")
+      return
     }
   }
 
@@ -74,31 +97,11 @@ export default function LoginPage() {
         <div className="flex-1 px-6 pt-6 pb-6 flex flex-col overflow-hidden">
           <h2 className="text-[38px] sm:text-[52px] leading-none font-semibold mb-6 text-green-950">Welcome Back!</h2>
 
-          {/* Toggle */}
-          <div className="flex bg-gray-200 rounded-full mb-6 overflow-hidden h-12 sm:h-14">
-            <button
-              className={`flex-1 py-2 text-sm font-medium ${
-                mode === "roll" ? "bg-green-700 text-white" : "text-gray-600"
-              }`}
-              onClick={() => setMode("roll")}
-            >
-              Roll No
-            </button>
-            <button
-              className={`flex-1 py-2 text-sm font-medium ${
-                mode === "email" ? "bg-green-700 text-white" : "text-gray-600"
-              }`}
-              onClick={() => setMode("email")}
-            >
-              Email
-            </button>
-          </div>
-
           {/* Form */}
           <form onSubmit={handleLogin} className="space-y-4 flex-1 flex flex-col">
             <input
               type="text"
-              placeholder={mode === "roll" ? "Enter Roll Number" : "Enter College Email"}
+              placeholder="Enter email or roll number"
               className="w-full px-5 py-3 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-600"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
