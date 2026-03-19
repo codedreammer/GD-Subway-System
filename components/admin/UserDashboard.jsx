@@ -6,10 +6,12 @@ import StatsCard from "@/components/admin/StatsCard"
 
 export default function UserDashboard({
   totalStudents,
+  activeToday,
   firstLoginPending,
   suspended
 }) {
   const [total, setTotal] = useState(totalStudents ?? 0)
+  const [active, setActive] = useState(activeToday ?? 0)
   const [pending, setPending] = useState(firstLoginPending ?? 0)
   const [suspend, setSuspend] = useState(suspended ?? 0)
 
@@ -49,6 +51,18 @@ export default function UserDashboard({
             }
           }
 
+          if (payload.eventType === "UPDATE") {
+            if (payload.new.last_login_at && payload.old && payload.new.last_login_at !== payload.old.last_login_at) {
+              const today = new Date().toISOString().split("T")[0]
+              const oldDate = payload.old.last_login_at ? payload.old.last_login_at.split("T")[0] : null
+              const newDate = payload.new.last_login_at.split("T")[0]
+
+              if (newDate === today && oldDate !== today) {
+                setActive((prev) => prev + 1)
+              }
+            }
+          }
+
           if (payload.eventType === "DELETE" && payload.old?.role === "student") {
             setTotal((prev) => Math.max(0, prev - 1))
 
@@ -72,7 +86,7 @@ export default function UserDashboard({
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
       <StatsCard title="Total Students" value={total} color="blue" />
-      <StatsCard title="Active Today" value="--" color="green" />
+      <StatsCard title="Active Today" value={active} color="green" />
       <StatsCard title="First Login Pending" value={pending} color="orange" />
       <StatsCard title="Suspended" value={suspend} color="red" />
     </div>
