@@ -1,4 +1,4 @@
-﻿import { supabase } from '@/lib/supabaseClient'
+import { supabase } from '@/lib/supabaseClient'
 import { generateOrderCode } from '@/utils/generateOrderCode'
 
 export const createOrder = async ({ studentId, vendorId, cartItems }) => {
@@ -14,6 +14,7 @@ export const createOrder = async ({ studentId, vendorId, cartItems }) => {
       .from('orders')
       .insert({
         order_code: generateOrderCode(),
+        user_id: studentId,
         student_id: studentId,
         vendor_id: vendorId,
         total_amount: totalAmount,
@@ -78,13 +79,13 @@ export const getVendorOrders = async (vendorId) => {
 export const updateOrderStatus = async (orderId, newStatus) => {
   try {
     const validTransitions = {
-      pending: 'accepted',
-      accepted: 'ready',
-      ready: 'completed'
+      pending: ['accepted', 'rejected'],
+      accepted: ['ready', 'rejected'],
+      ready: ['completed']
     }
 
     const { data: currentOrder, error: fetchError } = await supabase
-      .from('orders')
+      .from('orders'  )
       .select('id, status')
       .eq('id', orderId)
       .single()
@@ -92,8 +93,8 @@ export const updateOrderStatus = async (orderId, newStatus) => {
     if (fetchError) throw fetchError
     if (!currentOrder) throw new Error('Order not found')
 
-    const expectedNextStatus = validTransitions[currentOrder.status]
-    if (expectedNextStatus !== newStatus) {
+    const expectedNextStatuses = validTransitions[currentOrder.status] || []
+    if (!expectedNextStatuses.includes(newStatus)) {
       throw new Error(
         `Invalid status transition: ${currentOrder.status} -> ${newStatus}`
       )
