@@ -1,3 +1,4 @@
+import { ShieldCheck, Sparkles, Users } from "lucide-react";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import LiveKpiCards from "@/components/admin/dashboard/LiveKpiCards";
 import ActivityFeed from "@/components/admin/dashboard/ActivityFeed";
@@ -14,34 +15,45 @@ export default async function AdminDashboard() {
     { count: totalVendors },
     { data: recentOrders },
   ] = await Promise.all([
-    supabaseAdmin
-      .from("orders")
-      .select("*", { count: "exact", head: true })
-      .gte("created_at", today),
-    supabaseAdmin
-      .from("vendors")
-      .select("*", { count: "exact", head: true })
-      .eq("is_online", true),
-    supabaseAdmin
-      .from("orders")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "pending"),
-    supabaseAdmin
-      .from("orders")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "rejected"),
-    supabaseAdmin
-      .from("vendors")
-      .select("*", { count: "exact", head: true }),
-    supabaseAdmin
-      .from("orders")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(10),
+    supabaseAdmin.from("orders").select("*", { count: "exact", head: true }).gte("created_at", today),
+    supabaseAdmin.from("vendors").select("*", { count: "exact", head: true }).eq("is_online", true),
+    supabaseAdmin.from("orders").select("*", { count: "exact", head: true }).eq("status", "pending"),
+    supabaseAdmin.from("orders").select("*", { count: "exact", head: true }).eq("status", "rejected"),
+    supabaseAdmin.from("vendors").select("*", { count: "exact", head: true }),
+    supabaseAdmin.from("orders").select("*").order("created_at", { ascending: false }).limit(10),
   ]);
 
   return (
     <div className="space-y-6">
+      <section className="premium-card overflow-hidden p-6">
+        <div className="grid gap-4 lg:grid-cols-[1.4fr_0.6fr] lg:items-center">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-green-700">Overview</p>
+            <h2 className="mt-2 text-3xl font-black tracking-tight text-slate-900">Daily command center</h2>
+            <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-500">
+              Watch order velocity, vendor availability, and queue pressure in one cleaner control surface.
+            </p>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="rounded-[1.5rem] bg-gradient-to-br from-green-50 to-emerald-100 p-4">
+              <Sparkles className="h-5 w-5 text-green-700" />
+              <p className="mt-4 text-2xl font-black text-slate-900">{totalOrders || 0}</p>
+              <p className="mt-1 text-xs font-semibold uppercase tracking-[0.22em] text-slate-600">Orders today</p>
+            </div>
+            <div className="rounded-[1.5rem] bg-gradient-to-br from-blue-50 to-cyan-100 p-4">
+              <Users className="h-5 w-5 text-sky-700" />
+              <p className="mt-4 text-2xl font-black text-slate-900">{activeVendors || 0}</p>
+              <p className="mt-1 text-xs font-semibold uppercase tracking-[0.22em] text-slate-600">Vendors live</p>
+            </div>
+            <div className="rounded-[1.5rem] bg-gradient-to-br from-amber-50 to-yellow-100 p-4">
+              <ShieldCheck className="h-5 w-5 text-amber-700" />
+              <p className="mt-4 text-2xl font-black text-slate-900">{queueOrders || 0}</p>
+              <p className="mt-1 text-xs font-semibold uppercase tracking-[0.22em] text-slate-600">In queue</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <LiveKpiCards
         initialCounts={{
           totalOrders: totalOrders || 0,
@@ -61,29 +73,31 @@ export default async function AdminDashboard() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <div className="mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Student Activity Summary</h2>
-          <p className="text-sm text-gray-500">Platform engagement snapshot</p>
+      <section className="premium-card p-6">
+        <div className="mb-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-green-700">Student signals</p>
+          <h2 className="mt-1 text-2xl font-black tracking-tight text-slate-900">Engagement snapshot</h2>
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <div className="rounded-xl border border-blue-100 bg-blue-50 p-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-blue-700">Total Active Users</p>
-            <p className="mt-2 text-2xl font-bold text-blue-900">1,284</p>
+          <div className="rounded-[1.5rem] bg-gradient-to-br from-sky-50 to-blue-100 p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-700">Total active users</p>
+            <p className="mt-3 text-3xl font-black text-slate-900">1,284</p>
           </div>
-          <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-emerald-700">Average Orders Per Day</p>
-            <p className="mt-2 text-2xl font-bold text-emerald-900">326</p>
+          <div className="rounded-[1.5rem] bg-gradient-to-br from-emerald-50 to-green-100 p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700">Average orders per day</p>
+            <p className="mt-3 text-3xl font-black text-slate-900">326</p>
           </div>
-          <div className="rounded-xl border border-amber-100 bg-amber-50 p-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-amber-700">Peak Usage Time</p>
-            <p className="mt-2 text-2xl font-bold text-amber-900">12:00 PM - 2:00 PM</p>
+          <div className="rounded-[1.5rem] bg-gradient-to-br from-amber-50 to-yellow-100 p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-700">Peak usage</p>
+            <p className="mt-3 text-3xl font-black text-slate-900">12 PM - 2 PM</p>
           </div>
         </div>
 
-        <p className="mt-4 text-xs text-gray-500">No personal student data exposed.</p>
-      </div>
+        <p className="mt-4 text-xs font-medium uppercase tracking-[0.22em] text-slate-400">
+          No personal student data exposed.
+        </p>
+      </section>
     </div>
   );
 }
