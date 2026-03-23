@@ -1,26 +1,21 @@
 const colorClasses = {
-  blue: "bg-blue-50 text-blue-700",
-  green: "bg-green-50 text-green-700",
-  orange: "bg-orange-50 text-orange-700",
-  red: "bg-red-50 text-red-700",
-  gray: "bg-gray-50 text-gray-700"
-}
+  blue: "from-sky-100 to-blue-50 text-sky-700",
+  green: "from-emerald-100 to-green-50 text-emerald-700",
+  orange: "from-amber-100 to-yellow-50 text-amber-700",
+  red: "from-rose-100 to-red-50 text-rose-700",
+  gray: "from-slate-100 to-slate-50 text-slate-700",
+};
 
-export default function StatsCard({
-  title,
-  label = "Stat",
-  value = 0,
-  color = "gray"
-}) {
-  const badgeClass = colorClasses[color] || colorClasses.gray
-  const heading = title || label
+export default function StatsCard({ title, label = "Stat", value = 0, color = "gray" }) {
+  const heading = title || label;
+  const theme = colorClasses[color] || colorClasses.gray;
 
   return (
-    <article className="rounded-xl bg-white p-6 shadow">
-      <p className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${badgeClass}`}>
+    <article className="premium-card overflow-hidden p-5">
+      <div className={`inline-flex rounded-full bg-gradient-to-br px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] ${theme}`}>
         {heading}
-      </p>
-      <strong className="mt-3 block text-2xl font-bold text-gray-900">{value}</strong>
+      </div>
+      <strong className="mt-5 block text-4xl font-black tracking-tight text-slate-900">{value}</strong>
     </article>
-  )
+  );
 }

@@ -13,14 +13,14 @@ export default function PeakHoursChart() {
   const maxOrders = Math.max(...peakHoursData.map((slot) => slot.orders));
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-      <div className="mb-5 flex items-center gap-3">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-100">
-          <Clock3 className="h-6 w-6 text-orange-600" />
+    <section className="premium-card p-6">
+      <div className="mb-6 flex items-center gap-3">
+        <div className="flex h-12 w-12 items-center justify-center rounded-[1.4rem] bg-gradient-to-br from-amber-100 to-yellow-50">
+          <Clock3 className="h-6 w-6 text-amber-700" />
         </div>
         <div>
-          <h3 className="text-2xl font-semibold text-gray-900">Peak Hours</h3>
-          <p className="text-sm text-gray-500">Today's order distribution</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-green-700">Performance</p>
+          <h3 className="mt-1 text-2xl font-black tracking-tight text-slate-900">Peak hours</h3>
         </div>
       </div>
 
@@ -31,16 +31,16 @@ export default function PeakHoursChart() {
 
           return (
             <div key={slot.time}>
-              <div className="mb-2 flex items-center justify-between">
-                <p className="text-lg font-medium text-gray-700">{slot.time}</p>
-                <p className={`flex items-center gap-1 text-lg font-semibold ${isPeak ? "text-orange-600" : "text-gray-600"}`}>
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <p className="text-sm font-semibold text-slate-700">{slot.time}</p>
+                <p className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${isPeak ? "bg-amber-50 text-amber-700" : "bg-slate-100 text-slate-600"}`}>
                   {slot.orders} orders
                   {isPeak ? <Flame className="h-4 w-4" /> : null}
                 </p>
               </div>
-              <div className="h-2.5 overflow-hidden rounded-full bg-gray-200">
+              <div className="h-3 overflow-hidden rounded-full bg-slate-100">
                 <div
-                  className={`h-full rounded-full ${isPeak ? "bg-orange-500" : "bg-blue-500"}`}
+                  className={`h-full rounded-full ${isPeak ? "bg-gradient-to-r from-amber-500 to-orange-400" : "bg-gradient-to-r from-green-700 to-green-500"}`}
                   style={{ width: `${widthPercentage}%` }}
                 />
               </div>
@@ -48,6 +48,6 @@ export default function PeakHoursChart() {
           );
         })}
       </div>
-    </div>
+    </section>
   );
 }
