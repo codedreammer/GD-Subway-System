@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   AlertCircle,
@@ -9,9 +9,15 @@ import {
   Clock3,
   LogOut,
   PackageOpen,
+  Search,
+  X,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase/supabaseClient'
-import { getVendorOrders, updateOrderStatus } from '@/features/orders/services/orderService'
+import {
+  getVendorOrders,
+  searchVendorOrdersByCode,
+  updateOrderStatus,
+} from '@/features/orders/services/orderService'
 import { formatDate } from '@/utils/formatDate'
 import formatCurrency from '@/utils/formatCurrency'
 
@@ -36,6 +42,20 @@ const statusThemes = {
     badge: 'bg-red-100 text-red-700',
     card: 'border-red-200 bg-red-50/60',
   }
+}
+
+function filterOrdersByCode(orders, searchTerm) {
+  if (!searchTerm) return orders
+
+  return orders.filter((order) =>
+    order.order_code?.toLowerCase().includes(searchTerm)
+  )
+}
+
+function isAbortError(error) {
+  const message = error?.message?.toLowerCase() || ''
+
+  return error?.name === 'AbortError' || message.includes('aborted')
 }
 
 function VendorDashboardSkeleton() {
@@ -85,6 +105,9 @@ function ActionButton({ disabled, onClick, className, children }) {
 
 function OrderCard({ order, updatingOrderId, onUpdate }) {
   const theme = statusThemes[order.status] || statusThemes.pending
+  const studentLabel = order.student?.name
+    ? `${order.student.name} (${order.student.roll_no || 'N/A'})`
+    : 'Unknown'
 
   return (
     <article className={`rounded-[1.6rem] border p-5 shadow-sm transition-all duration-300 hover:shadow-md ${theme.card}`}>
@@ -104,7 +127,7 @@ function OrderCard({ order, updatingOrderId, onUpdate }) {
               <Clock3 className="h-4 w-4 text-slate-400" />
               {formatDate(order.created_at)}
             </p>
-            <p className="font-semibold text-slate-900">Student: {order.users?.name}</p>
+            <p className="font-semibold text-slate-900">Student: {studentLabel}</p>
             <p className="font-semibold text-green-700">{formatCurrency(order.total_amount)}</p>
           </div>
 
@@ -174,10 +197,46 @@ export default function VendorPage() {
   const [updatingOrderId, setUpdatingOrderId] = useState(null)
   const [vendor, setVendor] = useState(null)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
+  const deferredSearchTerm = useDeferredValue(searchTerm)
+  const normalizedSearchTerm = deferredSearchTerm.trim().toLowerCase()
+  const hasInitializedDebouncedSearch = useRef(false)
+  const latestFetchRequestRef = useRef(0)
+  const activeOrdersAbortControllerRef = useRef(null)
 
-  const fetchVendorOrders = async (vendorId) => {
-    const data = await getVendorOrders(vendorId)
-    setOrders(data || [])
+  const fetchVendorOrders = async (vendorId, searchValue = '') => {
+    if (activeOrdersAbortControllerRef.current) {
+      activeOrdersAbortControllerRef.current.abort()
+    }
+
+    const abortController = new AbortController()
+    activeOrdersAbortControllerRef.current = abortController
+    const requestId = ++latestFetchRequestRef.current
+    const normalizedBackendSearch = searchValue.trim()
+
+    try {
+      const data = normalizedBackendSearch
+        ? await searchVendorOrdersByCode(vendorId, normalizedBackendSearch, abortController.signal)
+        : await getVendorOrders(vendorId, abortController.signal)
+
+      if (
+        requestId === latestFetchRequestRef.current &&
+        activeOrdersAbortControllerRef.current === abortController
+      ) {
+        setOrders(data || [])
+      }
+    } catch (err) {
+      if (isAbortError(err)) {
+        return
+      }
+
+      throw err
+    } finally {
+      if (activeOrdersAbortControllerRef.current === abortController) {
+        activeOrdersAbortControllerRef.current = null
+      }
+    }
   }
 
   useEffect(() => {
@@ -235,7 +294,7 @@ export default function VendorPage() {
           filter: `vendor_id=eq.${vendor.id}`
         },
         async () => {
-          await fetchVendorOrders(vendor.id)
+          await fetchVendorOrders(vendor.id, debouncedSearchTerm)
         }
       )
       .subscribe()
@@ -243,7 +302,50 @@ export default function VendorPage() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [vendor])
+  }, [vendor, debouncedSearchTerm])
+
+  useEffect(() => {
+    return () => {
+      activeOrdersAbortControllerRef.current?.abort()
+    }
+  }, [])
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm.trim())
+    }, 400)
+
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
+  }, [searchTerm])
+
+  useEffect(() => {
+    if (!vendor) return
+
+    if (!hasInitializedDebouncedSearch.current) {
+      hasInitializedDebouncedSearch.current = true
+      if (!debouncedSearchTerm) return
+    }
+
+    let isActive = true
+
+    const syncOrdersWithSearch = async () => {
+      try {
+        await fetchVendorOrders(vendor.id, debouncedSearchTerm)
+      } catch (err) {
+        if (isActive && !isAbortError(err)) {
+          console.error('Failed to sync debounced order search:', err)
+        }
+      }
+    }
+
+    syncOrdersWithSearch()
+
+    return () => {
+      isActive = false
+    }
+  }, [vendor, debouncedSearchTerm])
 
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -319,6 +421,17 @@ export default function VendorPage() {
     () => orders.filter((order) => order.status === 'ready'),
     [orders]
   )
+  const filteredIncomingOrders = useMemo(
+    () => filterOrdersByCode(incomingOrders, normalizedSearchTerm),
+    [incomingOrders, normalizedSearchTerm]
+  )
+  const filteredReadyOrders = useMemo(
+    () => filterOrdersByCode(readyOrders, normalizedSearchTerm),
+    [readyOrders, normalizedSearchTerm]
+  )
+  const hasSearchTerm = normalizedSearchTerm.length > 0
+  const hasActiveOrders = incomingOrders.length > 0 || readyOrders.length > 0
+  const hasMatchingOrders = filteredIncomingOrders.length > 0 || filteredReadyOrders.length > 0
 
   if (loading) return <VendorDashboardSkeleton />
 
@@ -365,25 +478,78 @@ export default function VendorPage() {
         <div className="mt-6 grid gap-4 md:grid-cols-3">
           <div className="glass-panel rounded-[1.6rem] p-4">
             <p className="text-xs uppercase tracking-[0.22em] text-emerald-100">Incoming</p>
-            <p className="mt-2 text-3xl font-black">{incomingOrders.length}</p>
+            <p className="mt-2 text-3xl font-black">{filteredIncomingOrders.length}</p>
+            {hasSearchTerm && (
+              <p className="mt-1 text-xs text-emerald-100/80">
+                {incomingOrders.length} total incoming
+              </p>
+            )}
           </div>
           <div className="glass-panel rounded-[1.6rem] p-4">
             <p className="text-xs uppercase tracking-[0.22em] text-emerald-100">Ready for pickup</p>
-            <p className="mt-2 text-3xl font-black">{readyOrders.length}</p>
+            <p className="mt-2 text-3xl font-black">{filteredReadyOrders.length}</p>
+            {hasSearchTerm && (
+              <p className="mt-1 text-xs text-emerald-100/80">
+                {readyOrders.length} total ready
+              </p>
+            )}
           </div>
           <div className="glass-panel rounded-[1.6rem] p-4">
             <p className="text-xs uppercase tracking-[0.22em] text-emerald-100">All active</p>
-            <p className="mt-2 text-3xl font-black">{incomingOrders.length + readyOrders.length}</p>
+            <p className="mt-2 text-3xl font-black">{filteredIncomingOrders.length + filteredReadyOrders.length}</p>
+            {hasSearchTerm && (
+              <p className="mt-1 text-xs text-emerald-100/80">
+                {incomingOrders.length + readyOrders.length} total active
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-6 rounded-[1.6rem] border border-white/15 bg-white/10 p-4 backdrop-blur">
+          <label
+            htmlFor="order-search"
+            className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-50"
+          >
+            Search orders
+          </label>
+          <div className="relative mt-3">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              id="order-search"
+              type="text"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Search by Order ID (e.g. GD2803)"
+              className="w-full rounded-2xl border border-white/20 bg-white/95 py-3 pl-11 pr-12 text-sm font-medium text-slate-900 outline-none transition focus:border-white focus:bg-white"
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+                aria-label="Clear order search"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </div>
       </section>
 
-      {incomingOrders.length === 0 && readyOrders.length === 0 ? (
+      {!hasActiveOrders ? (
         <section className="premium-card mt-6 px-8 py-12 text-center">
           <PackageOpen className="mx-auto h-12 w-12 text-slate-400" />
           <h2 className="mt-4 text-2xl font-black tracking-tight text-slate-900">No active orders</h2>
           <p className="mt-2 text-sm leading-6 text-slate-500">
             New orders will appear here in real time as students place them.
+          </p>
+        </section>
+      ) : hasSearchTerm && !hasMatchingOrders ? (
+        <section className="premium-card mt-6 px-8 py-12 text-center">
+          <Search className="mx-auto h-12 w-12 text-slate-400" />
+          <h2 className="mt-4 text-2xl font-black tracking-tight text-slate-900">No matching orders found</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-500">
+            Try another order code or clear the search to view all active orders.
           </p>
         </section>
       ) : (
@@ -400,8 +566,8 @@ export default function VendorPage() {
             </div>
 
             <div className="space-y-4">
-              {incomingOrders.length > 0 ? (
-                incomingOrders.map((order) => (
+              {filteredIncomingOrders.length > 0 ? (
+                filteredIncomingOrders.map((order) => (
                   <OrderCard
                     key={order.id}
                     order={order}
@@ -411,7 +577,7 @@ export default function VendorPage() {
                 ))
               ) : (
                 <div className="rounded-[1.5rem] border border-dashed border-slate-200 bg-slate-50 px-6 py-8 text-center text-slate-500">
-                  No incoming orders right now.
+                  {hasSearchTerm ? 'No matching incoming orders.' : 'No incoming orders right now.'}
                 </div>
               )}
             </div>
@@ -429,8 +595,8 @@ export default function VendorPage() {
             </div>
 
             <div className="space-y-4">
-              {readyOrders.length > 0 ? (
-                readyOrders.map((order) => (
+              {filteredReadyOrders.length > 0 ? (
+                filteredReadyOrders.map((order) => (
                   <OrderCard
                     key={order.id}
                     order={order}
@@ -440,7 +606,7 @@ export default function VendorPage() {
                 ))
               ) : (
                 <div className="rounded-[1.5rem] border border-dashed border-slate-200 bg-slate-50 px-6 py-8 text-center text-slate-500">
-                  No ready orders waiting for pickup.
+                  {hasSearchTerm ? 'No matching ready orders.' : 'No ready orders waiting for pickup.'}
                 </div>
               )}
             </div>

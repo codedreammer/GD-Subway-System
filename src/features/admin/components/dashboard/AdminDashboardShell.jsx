@@ -9,7 +9,7 @@ const tabs = [
   { label: "Overview", href: "/admin", icon: Home },
   { label: "Vendors", href: "/admin/vendors", icon: Store },
   { label: "Students", href: "/admin/users", icon: Users },
-  { label: "Orders", href: "/admin/orders", icon: ClipboardList, disabled: true },
+  { label: "Orders", href: "/admin/orders", icon: ClipboardList },
   { label: "Emergency", href: "/admin/emergency", icon: AlertTriangle, disabled: true },
   { label: "Reports", href: "/admin/reports", icon: FileText, disabled: true },
   { label: "Security", href: "/admin/security", icon: Shield, disabled: true },

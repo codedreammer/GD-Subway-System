@@ -52,13 +52,13 @@ export const createOrder = async ({ studentId, vendorId, cartItems }) => {
   }
 }
 
-export const getVendorOrders = async (vendorId) => {
+export const getVendorOrders = async (vendorId, signal) => {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('orders')
       .select(`
         *,
-        users(name),
+        student:users!orders_student_id_fkey(name, roll_no),
         order_items(
           quantity,
           price_at_time,
@@ -68,10 +68,53 @@ export const getVendorOrders = async (vendorId) => {
       .eq('vendor_id', vendorId)
       .order('created_at', { ascending: false })
 
+    if (signal) {
+      query = query.abortSignal(signal)
+    }
+
+    const { data, error } = await query
+
     if (error) throw error
     return data
   } catch (err) {
     console.error("Vendor Orders Error:", err)
+    throw err
+  }
+}
+
+export const searchVendorOrdersByCode = async (vendorId, searchTerm = '', signal) => {
+  try {
+    let query = supabase
+      .from('orders')
+      .select(`
+        *,
+        student:users!orders_student_id_fkey(name, roll_no),
+        order_items(
+          quantity,
+          price_at_time,
+          items(name)
+        )
+      `)
+      .eq('vendor_id', vendorId)
+
+    const normalizedSearchTerm = searchTerm.trim()
+
+    if (normalizedSearchTerm) {
+      query = query.ilike('order_code', `%${normalizedSearchTerm}%`)
+    }
+
+    query = query.order('created_at', { ascending: false })
+
+    if (signal) {
+      query = query.abortSignal(signal)
+    }
+
+    const { data, error } = await query
+
+    if (error) throw error
+    return data
+  } catch (err) {
+    console.error('Vendor Order Search Error:', err)
     throw err
   }
 }

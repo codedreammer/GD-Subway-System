@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
 import { supabase } from "@/lib/supabase/supabaseClient";
+import { syncUserRollNoFromEmail } from "@/features/auth/services/authService";
 
 export default function LoginPage() {
   const [identifier, setIdentifier] = useState("");
@@ -60,7 +61,7 @@ export default function LoginPage() {
 
     const { data: dbUser, error: dbError } = await supabase
       .from("users")
-      .select("role, is_first_login")
+      .select("role, is_first_login, roll_no")
       .eq("id", user.id)
       .single();
 
@@ -76,6 +77,19 @@ export default function LoginPage() {
         last_login_at: new Date().toISOString(),
       })
       .eq("id", user.id);
+
+    try {
+      dbUser.roll_no = await syncUserRollNoFromEmail({
+        user,
+        role: dbUser.role,
+        existingRollNo: dbUser.roll_no,
+      });
+    } catch (rollSyncError) {
+      await supabase.auth.signOut();
+      setError(rollSyncError.message || "Failed to sync roll number");
+      setSubmitting(false);
+      return;
+    }
 
     if (dbUser.is_first_login) {
       router.refresh();

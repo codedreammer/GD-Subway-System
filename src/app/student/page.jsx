@@ -102,7 +102,7 @@ export default function StudentHome() {
 
         const { data: userData } = await supabase
           .from("users")
-          .select("name, roll_number")
+          .select("name, roll_no")
           .eq("id", currentUser.id)
           .single();
 
@@ -152,7 +152,7 @@ export default function StudentHome() {
 
             <div className="glass-panel rounded-full px-4 py-2 text-right">
               <p className="text-[10px] uppercase tracking-[0.25em] text-emerald-100">Roll No</p>
-              <p className="mt-1 text-sm font-semibold">{userMeta?.roll_number || "--"}</p>
+              <p className="mt-1 text-sm font-semibold">{userMeta?.roll_no || "Not available"}</p>
             </div>
           </div>
 

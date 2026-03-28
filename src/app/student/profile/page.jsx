@@ -124,7 +124,7 @@ export default function ProfilePage() {
           <h1 className="mt-5 text-3xl font-black tracking-tight">{userMeta?.name || "Student"}</h1>
           <p className="mt-2 text-sm font-medium text-emerald-100">Campus food profile</p>
           <div className="mt-4 inline-flex rounded-full bg-white/14 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-emerald-100">
-            Roll no {userMeta?.roll_number || "--"}
+            Roll no {userMeta?.roll_no || "Not available"}
           </div>
         </div>
       </div>
@@ -156,7 +156,7 @@ export default function ProfilePage() {
           />
           <ActionRow
             icon={UserRound}
-            label={userMeta?.roll_number || "--"}
+            label={userMeta?.roll_no || "Not available"}
             meta="Roll number"
             iconClassName="bg-blue-100 text-blue-700"
           />

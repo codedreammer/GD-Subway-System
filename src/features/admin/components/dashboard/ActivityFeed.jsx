@@ -34,7 +34,7 @@ function EventIcon({ status }) {
   return <Clock3 className="h-5 w-5 text-amber-600" />;
 }
 
-export default function ActivityFeed({ activities = [] }) {
+export default function ActivityFeed({ activities = [], subscribeToRealtime = true }) {
   const [events, setEvents] = useState(() => activities.slice(0, 10).map((row) => toActivityRow(row, "init")));
 
   useEffect(() => {
@@ -42,6 +42,10 @@ export default function ActivityFeed({ activities = [] }) {
   }, [activities]);
 
   useEffect(() => {
+    if (!subscribeToRealtime) {
+      return undefined;
+    }
+
     const channel = supabase
       .channel("admin-dashboard-activity-feed")
       .on(
@@ -72,7 +76,7 @@ export default function ActivityFeed({ activities = [] }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [subscribeToRealtime]);
 
   const kpis = useMemo(() => {
     let pending = 0;
