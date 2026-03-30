@@ -18,7 +18,7 @@ import { getCurrentUser, signOut } from "@/features/auth/services/authService";
 function ProfileSkeleton() {
   return (
     <div className="min-h-screen bg-slate-50 pb-32">
-      <div className="rounded-b-[2.5rem] bg-gradient-to-r from-[#0f3d22] via-[#166534] to-[#22c55e] px-6 pb-20 pt-10">
+      <div className="rounded-b-[2.5rem] bg-linear-to-r from-[#0f3d22] via-[#166534] to-[#22c55e] px-6 pb-20 pt-10">
         <div className="mx-auto skeleton h-28 w-28 rounded-full" />
         <div className="mx-auto mt-5 skeleton h-6 w-44 rounded-full" />
         <div className="mx-auto mt-3 skeleton h-4 w-28 rounded-full" />
@@ -112,7 +112,7 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-32">
-      <div className="relative overflow-hidden rounded-b-[2.75rem] bg-gradient-to-r from-[#0f3d22] via-[#166534] to-[#22c55e] px-6 pb-24 pt-10 text-white shadow-[0_24px_70px_-34px_rgba(22,101,52,0.95)]">
+      <div className="relative overflow-hidden rounded-b-[2.75rem] bg-linear-to-r from-[#0f3d22] via-[#166534] to-[#22c55e] px-6 pb-24 pt-10 text-white shadow-[0_24px_70px_-34px_rgba(22,101,52,0.95)]">
         <button className="glass-panel absolute right-6 top-6 flex h-11 w-11 items-center justify-center rounded-2xl transition hover:scale-105">
           <Settings className="h-5 w-5" />
         </button>
@@ -132,12 +132,12 @@ export default function ProfilePage() {
       <div className="-mt-10 space-y-5 px-5">
         <section className="premium-card p-5">
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-[1.4rem] bg-gradient-to-br from-green-50 to-emerald-100 p-4">
+            <div className="rounded-[1.4rem] bg-linear-to-br from-green-50 to-emerald-100 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-green-700">Orders</p>
               <p className="mt-3 text-3xl font-black text-slate-900">{ordersCount}</p>
               <p className="mt-1 text-sm text-slate-600">Placed so far</p>
             </div>
-            <div className="rounded-[1.4rem] bg-gradient-to-br from-slate-100 to-white p-4">
+            <div className="rounded-[1.4rem] bg-linear-to-br from-slate-100 to-white p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Member since</p>
               <p className="mt-3 text-3xl font-black text-slate-900">
                 {userMeta?.created_at ? new Date(userMeta.created_at).getFullYear() : new Date().getFullYear()}

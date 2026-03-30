@@ -128,8 +128,8 @@ export default function LoginPage() {
       <div className="floating-orb -right-14 bottom-6 h-56 w-56 bg-emerald-300" />
 
       <div className="relative z-10 w-full max-w-5xl overflow-hidden rounded-[2.5rem] border border-white/50 bg-white/70 shadow-[0_40px_90px_-50px_rgba(15,23,42,0.55)] backdrop-blur-xl">
-        <div className="grid min-h-[720px] lg:grid-cols-[1.1fr_0.9fr]">
-          <section className="relative overflow-hidden bg-gradient-to-br from-[#0f3d22] via-[#166534] to-[#22c55e] px-8 py-10 text-white sm:px-10">
+        <div className="grid min-h-180 lg:grid-cols-[1.1fr_0.9fr]">
+          <section className="relative overflow-hidden bg-linear-to-br from-[#0f3d22] via-[#166534] to-[#22c55e] px-8 py-10 text-white sm:px-10">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.18),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.12),transparent_26%)]" />
             <div className="relative flex h-full flex-col">
               <div className="inline-flex w-fit items-center gap-2 rounded-full bg-white/14 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-100">
@@ -151,15 +151,15 @@ export default function LoginPage() {
               </div>
 
               <div className="mt-auto grid gap-3 pt-10 sm:grid-cols-3">
-                <div className="glass-panel rounded-[1.5rem] p-4">
+                <div className="glass-panel rounded-3xl p-4">
                   <p className="text-2xl font-bold">15m</p>
                   <p className="mt-1 text-xs uppercase tracking-[0.22em] text-emerald-100">Average pickup</p>
                 </div>
-                <div className="glass-panel rounded-[1.5rem] p-4">
+                <div className="glass-panel rounded-3xl p-4">
                   <p className="text-2xl font-bold">Live</p>
                   <p className="mt-1 text-xs uppercase tracking-[0.22em] text-emerald-100">Order updates</p>
                 </div>
-                <div className="glass-panel rounded-[1.5rem] p-4">
+                <div className="glass-panel rounded-3xl p-4">
                   <p className="text-2xl font-bold">Secure</p>
                   <p className="mt-1 text-xs uppercase tracking-[0.22em] text-emerald-100">Role-based access</p>
                 </div>
