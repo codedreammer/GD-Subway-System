@@ -1,30 +1,56 @@
-import { createServerClient } from "@supabase/ssr"
-import { cookies } from "next/headers"
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
-export function createClient() {
-  const cookieStore = cookies()
+export function createClient(accessToken = null) {
+  const cookieStore = cookies();
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
+      global: accessToken
+        ? {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        : undefined,
+
       cookies: {
-        get: (name) => cookieStore.get(name)?.value,
-        set: (name, value, options) => {
+        get(name) {
+          return cookieStore.get(name)?.value;
+        },
+
+        set(name, value, options) {
           try {
-            cookieStore.set({ name, value, ...options })
+            cookieStore.set({
+              name,
+              value,
+              ...options,
+            });
           } catch (error) {
-            console.error("Cookie set failed in Server Component:", error)
+            console.error(
+              "Cookie set failed in Server Component:",
+              error
+            );
           }
         },
-        remove: (name, options) => {
+
+        remove(name, options) {
           try {
-            cookieStore.set({ name, value: "", ...options })
+            cookieStore.set({
+              name,
+              value: "",
+              ...options,
+            });
           } catch (error) {
-            console.error("Cookie remove failed in Server Component:", error)
+            console.error(
+              "Cookie remove failed in Server Component:",
+              error
+            );
           }
         },
       },
     }
-  )
+  );
 }
