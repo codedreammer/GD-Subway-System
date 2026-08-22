@@ -4,15 +4,30 @@ import { generateOrderCode } from '@/utils/generateOrderCode';
 
 export async function POST(req) {
   try {
-    const supabase = createClient();
+    const authHeader = req.headers.get("authorization");
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  return NextResponse.json(
+    { error: "Unauthorized" },
+    { status: 401 }
+  );
+}
 
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+const accessToken = authHeader.replace("Bearer ", "").trim();
+
+const supabase = createClient(accessToken);
+
+const {
+  data: { user },
+  error: authError,
+} = await supabase.auth.getUser(accessToken);
+
+if (authError || !user) {
+  return NextResponse.json(
+    { error: "Unauthorized" },
+    { status: 401 }
+  );
+}
 
 
 
