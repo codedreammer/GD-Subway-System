@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PackagePlus, X } from "lucide-react";
+import { supabase } from "@/lib/supabase/supabaseClient";
 
 export default function AddItemModal({ vendorId, categories = [] }) {
   const [open, setOpen] = useState(false);
@@ -19,19 +20,35 @@ export default function AddItemModal({ vendorId, categories = [] }) {
     }
   }, [categoryId, categories, hasCategories]);
 
-  async function handleSubmit(e) {
-    e.preventDefault();
+async function handleSubmit(e) {
+  e.preventDefault();
 
-    if (!hasCategories) {
-      alert("No active categories found. Please create/activate a category first.");
+  if (!hasCategories) {
+    alert(
+      "No active categories found. Please create/activate a category first."
+    );
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    // Get the current Supabase session
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      alert("Unauthorized. Please login again.");
       return;
     }
 
-    setLoading(true);
-
     const res = await fetch("/api/admin/add-item", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
       body: JSON.stringify({
         vendor_id: vendorId,
         name,
@@ -41,19 +58,27 @@ export default function AddItemModal({ vendorId, categories = [] }) {
     });
 
     const data = await res.json();
-    setLoading(false);
 
-    if (data.error) {
-      alert(data.error);
+    if (!res.ok) {
+      alert(data.error || "Failed to add item.");
       return;
     }
 
     setOpen(false);
     setName("");
     setPrice("");
-    setCategoryId(hasCategories ? String(categories[0].id) : "");
+    setCategoryId(
+      hasCategories ? String(categories[0].id) : ""
+    );
+
     router.refresh();
+  } catch (error) {
+    console.error("Add item error:", error);
+    alert("Something went wrong while adding the item.");
+  } finally {
+    setLoading(false);
   }
+}
 
   return (
     <>
