@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase/supabaseClient";
 import {
   ArrowLeft,
   CheckCircle,
@@ -77,40 +78,58 @@ export default function CartPage() {
   const taxes = Math.round(itemsTotal * 0.05);
   const grandTotal = itemsTotal + taxes;
 
-  const handlePlaceOrder = async () => {
-    if (!user || cartItems.length === 0 || !vendorId) return;
+const handlePlaceOrder = async () => {
+  if (!user || cartItems.length === 0 || !vendorId) return;
 
-    setLoading(true);
-    try {
-      const res = await fetch("/api/create-order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          student_id: user.id,
-          vendor_id: vendorId,
-          items: cartItems.map((item) => ({
-            id: item.id,
-            quantity: item.quantity,
-            price: item.price,
-          })),
-        }),
-      });
+  setLoading(true);
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to place order");
+  try {
+    // Get the current authenticated session
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
 
-      setSuccess(true);
-      clearCart();
-      setTimeout(() => {
-        router.push(`/student/orders/${data.order.id}`);
-      }, 1500);
-    } catch (err) {
-      console.error(err);
-      alert(err.message);
-    } finally {
-      setLoading(false);
+    if (sessionError || !session?.access_token) {
+      router.push("/auth/login");
+      return;
     }
-  };
+
+    const res = await fetch("/api/create-order", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        vendor_id: vendorId,
+        items: cartItems.map((item) => ({
+          id: item.id,
+          quantity: item.quantity,
+          price: item.price,
+        })),
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || "Failed to place order");
+    }
+
+    setSuccess(true);
+    clearCart();
+
+    setTimeout(() => {
+      router.push(`/student/orders/${data.order.id}`);
+    }, 1500);
+  } catch (err) {
+    console.error("Place order error:", err);
+    alert(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   if (userLoading) {
     return <CartSkeleton />;

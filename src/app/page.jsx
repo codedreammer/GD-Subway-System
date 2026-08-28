@@ -1,5 +1,7 @@
+import { redirect } from "next/navigation";
+
 export default function HomePage() {
-  return (
+  redirect("/auth/login") (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-6 py-16">
       <div className="floating-orb left-[-4rem] top-[-4rem] h-40 w-40 bg-green-200" />
       <div className="floating-orb bottom-[-3rem] right-[-3rem] h-48 w-48 bg-emerald-300" />
