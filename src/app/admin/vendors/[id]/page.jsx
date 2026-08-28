@@ -22,7 +22,11 @@ export default async function VendorDetail({ params }) {
     .eq("id", id)
     .single();
 
-  const { data: items } = await supabaseAdmin.from("items").select("*").eq("vendor_id", id);
+  const { data: items } = await supabaseAdmin
+  .from("items")
+  .select("*")
+  .eq("vendor_id", id)
+  .eq("is_available", true);
 
   const { data: categories } = await supabaseAdmin
     .from("categories")
