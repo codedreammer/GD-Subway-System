@@ -7,8 +7,14 @@ export default function useRoleRedirect(role) {
   const router = useRouter()
 
   useEffect(() => {
-    if (role === 'admin') router.replace('/admin')
-    else if (role === 'vendor') router.replace('/vendor')
-    else if (role === 'student') router.replace('/student')
+    if (role === 'admin') {
+      router.replace('/admin')
+    } else if (role === 'vendor') {
+      router.replace('/vendor')
+    } else if (role === 'grooming_staff') {
+      router.replace('/grooming/staff')
+    } else if (role === 'student') {
+      router.replace('/student')
+    }
   }, [role, router])
 }

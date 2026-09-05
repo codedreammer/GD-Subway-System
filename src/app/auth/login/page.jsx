@@ -112,6 +112,9 @@ export default function LoginPage() {
 
       router.refresh();
       router.push("/vendor");
+    } else if (dbUser.role === "grooming_staff") {
+      router.refresh();
+      router.push("/grooming/staff");
     } else if (dbUser.role === "student") {
       router.refresh();
       router.push("/student");

@@ -44,7 +44,7 @@ export async function createVendorAction(formData) {
     const { error: vendorError } = await supabaseAdmin.from("vendors").insert({
       user_id: userId,
       shop_name,
-      category_id: parseInt(category_id, 10),
+      category_id,
       is_online: false,
       avg_prep_time: parseInt(avg_prep_time, 10),
     });
