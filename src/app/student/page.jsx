@@ -209,14 +209,22 @@ export default function StudentHome() {
             {categories.map((cat) => (
               <div
                 key={cat.id}
-                className="premium-card min-w-[88px] flex-1 p-3 text-center hover:-translate-y-1"
+                onClick={() => {
+                  if (cat.name === "Grooming") {
+                    router.push("/student/grooming")
+                  }
+                }}
+                className="premium-card min-w-[88px] flex-1 cursor-pointer p-3 text-center transition hover:-translate-y-1"
               >
                 <div
                   className={`mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br ${cat.colors}`}
                 >
                   <cat.icon className="h-7 w-7" />
                 </div>
-                <p className="mt-3 text-xs font-semibold text-slate-700">{cat.name}</p>
+
+                <p className="mt-3 text-xs font-semibold text-slate-700">
+                  {cat.name}
+                </p>
               </div>
             ))}
           </div>

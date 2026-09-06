@@ -370,3 +370,136 @@
         )
     }
     }
+
+export async function GET(request) {
+  try {
+    const authHeader = request.headers.get("authorization")
+
+    if (!authHeader?.startsWith("Bearer ")) {
+      return Response.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      )
+    }
+
+    const accessToken = authHeader.replace("Bearer ", "")
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabaseAdmin.auth.getUser(accessToken)
+
+    if (authError || !user) {
+      return Response.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      )
+    }
+
+    const { data: dbUser, error: userError } =
+      await supabaseAdmin
+        .from("users")
+        .select("id, name, email, roll_no, role")
+        .eq("id", user.id)
+        .single()
+
+    if (
+      userError ||
+      !dbUser ||
+      dbUser.role !== "student"
+    ) {
+      return Response.json(
+        { error: "Student access required" },
+        { status: 403 }
+      )
+    }
+
+    const { data: booking, error: bookingError } =
+      await supabaseAdmin
+        .from("grooming_bookings")
+        .select(`
+          id,
+          student_id,
+          vendor_id,
+          service_id,
+          assigned_staff_id,
+          status,
+          queue_position,
+          estimated_start_at,
+          estimated_wait_minutes,
+          created_at,
+          started_at,
+          completed_at,
+          grooming_services (
+            id,
+            name,
+            price,
+            duration_minutes
+          ),
+          vendors (
+            id,
+            shop_name
+          ),
+          grooming_staff (
+            id,
+            name,
+            status
+          )
+        `)
+        .eq("student_id", user.id)
+        .in("status", ["WAITING", "SERVING"])
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+    if (bookingError) {
+      console.error(
+        "Active grooming booking lookup failed:",
+        bookingError
+      )
+
+      return Response.json(
+        { error: "Failed to load active booking" },
+        { status: 500 }
+      )
+    }
+
+    if (!booking) {
+      return Response.json({
+        success: true,
+        has_active_booking: false,
+        booking: null,
+      })
+    }
+
+    return Response.json({
+      success: true,
+      has_active_booking: true,
+      booking: {
+        id: booking.id,
+        status: booking.status,
+        queue_position: booking.queue_position,
+        estimated_start_at:
+          booking.estimated_start_at,
+        estimated_wait_minutes:
+          booking.estimated_wait_minutes,
+        created_at: booking.created_at,
+        started_at: booking.started_at,
+        completed_at: booking.completed_at,
+      },
+      service: booking.grooming_services,
+      salon: booking.vendors,
+      staff: booking.grooming_staff,
+    })
+  } catch (error) {
+    console.error(
+      "GET grooming booking error:",
+      error
+    )
+
+    return Response.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    )
+  }
+}

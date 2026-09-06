@@ -6,10 +6,12 @@
     Clock3,
     Scissors,
     UserRound,
+    UserCheck,
     Play,
     LogOut,
     RefreshCw,
     Sparkles,
+    ChevronDown,
     } from "lucide-react"
     import { supabase } from "@/lib/supabase/supabaseClient"
 
@@ -17,6 +19,7 @@
     const [dashboard, setDashboard] = useState(null)
     const [loading, setLoading] = useState(true)
     const [actionLoading, setActionLoading] = useState(false)
+    const [statusLoading, setStatusLoading] = useState(false)
     const [error, setError] = useState("")
 
     const getAccessToken = async () => {
@@ -133,6 +136,45 @@
         setError(err.message || "Failed to complete service")
         } finally {
         setActionLoading(false)
+        }
+    }
+
+    const updateAvailability = async (newStatus) => {
+        if (!newStatus || newStatus === staff?.status) return
+
+        try {
+        setStatusLoading(true)
+        setError("")
+
+        const accessToken = await getAccessToken()
+
+        if (!accessToken) {
+            throw new Error("Your session has expired. Please log in again.")
+        }
+
+        const response = await fetch("/api/grooming/staff/status", {
+            method: "PATCH",
+            headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify({
+            status: newStatus,
+            }),
+        })
+
+        const data = await response.json()
+
+        if (!response.ok) {
+            throw new Error(data.error || "Failed to update availability")
+        }
+
+        await loadDashboard()
+        } catch (err) {
+        console.error("Availability update error:", err)
+        setError(err.message || "Failed to update availability")
+        } finally {
+        setStatusLoading(false)
         }
     }
 
@@ -267,8 +309,38 @@
                 </div>
 
                 <div className="flex items-center gap-3">
+
+                    {/* Availability */}
+                    <div className="relative">
+                    <select
+                        value={staff?.status || "OFF_DUTY"}
+                        disabled={statusLoading || staff?.status === "BUSY"}
+                        onChange={(e) => updateAvailability(e.target.value)}
+                        className="appearance-none cursor-pointer rounded-xl border border-white/15 bg-white/10 py-3 pl-4 pr-10 text-sm font-bold text-white outline-none backdrop-blur transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                        <option value="AVAILABLE" className="text-slate-900">
+                        AVAILABLE
+                        </option>
+
+                        <option value="ON_BREAK" className="text-slate-900">
+                        ON BREAK
+                        </option>
+
+                        <option value="ON_LEAVE" className="text-slate-900">
+                        ON LEAVE
+                        </option>
+
+                        <option value="OFF_DUTY" className="text-slate-900">
+                        OFF DUTY
+                        </option>
+                    </select>
+
+                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white" />
+                    </div>
+
+                    {/* Current status */}
                     <div
-                    className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold backdrop-blur ${statusStyles.badge}`}
+                    className={`hidden items-center gap-2 rounded-full px-4 py-2 text-sm font-bold backdrop-blur sm:flex ${statusStyles.badge}`}
                     >
                     <span
                         className={`h-2.5 w-2.5 rounded-full ${statusStyles.dot}`}
@@ -277,9 +349,10 @@
                     {staff?.status}
                     </div>
 
+                    {/* Logout */}
                     <button
                     onClick={logout}
-                    className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/15 bg-white/10 transition hover:bg-white/20"
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-white/10 transition hover:bg-white/20"
                     title="Logout"
                     >
                     <LogOut className="h-5 w-5" />
@@ -347,6 +420,28 @@
                 </div>
             </div>
             </section>
+
+            {staff?.status !== "BUSY" && (
+            <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-5 py-4">
+                <div className="flex items-start gap-3">
+                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-600 shadow-sm">
+                    <UserCheck className="h-5 w-5" />
+                </div>
+
+                <div>
+                    <p className="text-sm font-bold text-emerald-900">
+                    Availability controls your queue assignment
+                    </p>
+
+                    <p className="mt-1 text-xs leading-5 text-emerald-700">
+                    When you choose Break, Leave, or Off Duty, new waiting
+                    customers will be reassigned to another eligible available staff
+                    member.
+                    </p>
+                </div>
+                </div>
+            </div>
+            )}
 
             {/* Error */}
             {error && (
